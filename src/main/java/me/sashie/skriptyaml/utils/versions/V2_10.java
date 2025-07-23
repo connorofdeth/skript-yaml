@@ -166,4 +166,24 @@ public class V2_10 implements SkriptAdapter {
 			e.printStackTrace();
 		}
 	}
+
+	@Override
+	public <T> boolean checkExpression(Expression<T> expr, Event event, Object checker, boolean negated) {
+		try {
+			Class<?> predicateClass = Class.forName("java.util.function.Predicate");
+			if (!predicateClass.isInstance(checker)) {
+				throw new IllegalArgumentException("Checker must be a Predicate for Skript 2.10+");
+			}
+			return (boolean) expr.getClass()
+				.getMethod("check", Event.class, predicateClass, boolean.class)
+				.invoke(expr, event, checker, negated);
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to check Expression with Predicate", e);
+		}
+	}
+
+	@Override
+	public <T> Object createChecker(java.util.function.Predicate<T> check) {
+		return check;
+	}
 }

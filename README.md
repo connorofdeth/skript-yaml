@@ -12,6 +12,7 @@ Effects
  - [Delete all or any loaded yaml from directory](#effect-delete-all-or-any-loaded-yaml-from-directory)
  - [Unload yaml](#effect-unload-yaml)
  - [Save yaml](#effect-save-yaml)
+ - [Change yaml id](#effect-change-yaml-id)
  
 Expressions
  - [Return all cached yaml](#expression-return-all-cached-yaml)
@@ -19,16 +20,19 @@ Expressions
  - [Yaml](#expression-yaml)
  - [Yaml list value](#expression-yaml-list-value)
  - [All yaml nodes](#expression-all-yaml-nodes)
+ - [YAML Node Type](#expression-yaml-node-type)
  - [Yaml comment/header](#expression-yaml-comment-or-header)
  - [Yaml loop](#expression-yaml-loop)
  
  Conditions
  - [Is yaml loaded](#condition-is-yaml-loaded)
+ - [Is yaml modified](#condition-is-yaml-modified)
  - [Is yaml empty](#condition-is-yaml-empty)
  - [Does yaml path have value](#condition-does-yaml-path-have-value)
  - [Does yaml path exist](#condition-does-yaml-path-exist)
  - [Is yaml path a list](#condition-does-yaml-path-have-list)
  - [Does yaml exist](#condition-does-yaml-exist)
+ - [YAML Node Type](#condition-yaml-node-type)
 
 ## Effects
 
@@ -150,9 +154,14 @@ unload yaml "config"
 ### Effect (Save yaml)
 Saves the current cached yaml elements to file
  - Using the `[with an indentation of %-number%]` option allows you to save the file with a different amount of spacing between 1 and 10
+ - Option to remove extra lines between nodes
+ - Use `to %string%` or `as %string%` to save to a different file path (If the yaml was deleted but kept in memory it will reassign the new file path to it if you haven't used the `(change|rename|update) y[a]ml %string% file path to %string%` expression)
+
 #### Syntax
 
 `save y[a]ml %strings% [with an indentation of %-number%] [(1¦[and] with(out| no) extra lines between nodes)]`
+
+`save y[a]ml %strings% (to|as) [(1¦non[(-| )]relative)] [file] %string% [with an indentation of %-number%] [(1¦[and] with(out| no) extra lines between nodes)]`
 
 #### Example
 
@@ -162,18 +171,84 @@ save yaml "config"
 
 # Save the YAML file with an indentation of 2
 save yaml "config" with an indentation of 2
+
+# Save to a different file path
+save yaml "config" to "plugins/MyPlugin/backup.yml"
+
+# Root directory example (Windows)
+save yaml "config" to non-relative file "RootFolder/MyAwesomePlugin/config.yml"
+# Or specify a drive
+save yaml "config" to non-relative file "C:/RootFolder/MyAwesomePlugin/config.yml"
+
+# Save to a different file path with custom indentation
+save yaml "config" as "plugins/MyPlugin/config_backup.yml" with an indentation of 4
 ```
+---
+
+### Effect (Change yaml id)
+
+Changes the ID of a loaded YAML file or reassigns its file path.
+  - The first syntax changes the ID of a YAML file. Any changes to the ID are made at your own risk as this can cause issues with any other scripts that use the YAML file.
+  - The second syntax reassigns the file path of a YAML file. This is useful when a file has been deleted but kept in memory.
+  - The YAML file must be loaded before changing its ID or file path.
+  - The new ID must not already be in use by another loaded YAML file.
+
+#### Syntax
+
+`(change|rename|update) y[a]ml id [from] %string% to %string%`
+
+`(change|rename|update) y[a]ml %string% file path to [(1¦non[(-| )]relative)] %string%`
+
+#### Example
+
+```skript
+# Change the ID of a YAML file
+change yaml id from "config" to "newconfig"
+
+# Change the ID of a YAML file with variables
+set {_oldId} to "oldconfig"
+set {_newId} to "newconfig"
+change yaml id from "%{_oldId}%" to "%{_newId}%"
+
+# Reassign the file path of a deleted YAML
+change yaml "config" file path to "plugins/MyPlugin/newconfig.yml"
+
+# Root directory example (Windows)
+change yaml "config" file path to non-relative "RootFolder/plugins/MyPlugin/newconfig.yml"
+# Or specify a drive
+change yaml "config" file path to non-relative "C:/RootFolder/plugins/MyPlugin/newconfig.yml"
+
+# Change multiple YAML IDs
+change yaml id from "config1" to "newconfig1"
+change yaml id from "config2" to "newconfig2"
+```
+
+#### Notes
+
+- The YAML file must be loaded before changing its ID
+- The new ID must not already be in use by another loaded YAML file
+- This operation only changes the ID in memory, not the actual file name
+- All existing references to the old ID will need to be updated to use the new ID
+- File path reassignment is useful for YAML files that have been deleted but kept in memory
+
 ---
 
 ## Expressions
 
 ### Expression (Return all cached yaml)
-Returns a list of all 'cached' yaml file ids
+Returns a list of all loaded yaml file ids or unloaded yaml files from directories
   - Using `from (director(y|ies) %-strings%` option gets ids from only said directories
+  - Can also return list of unloaded yaml files from a certain directory or list of directories
+  - To remain consistent with the load effect, the list of unloaded yaml files will not include the server path so that you don't have to use the non-relative option
+  - Some of the listed unloaded yaml files can include the server path which will require you to use the non-relative option in the yaml load effect
 
 #### Syntax
 
 `[(the|all [(of the|the)])] [currently] loaded y[a]ml [files] [from (director(y|ies) %-strings%|all directories)]`
+
+`[(the|all [(of the|the)])] [currently] unloaded y[a]ml [files] from (director(y|ies) %strings%`
+
+`[(the|all [(of the|the)])] [currently] loaded y[a]ml directories`
 
 #### Example
 
@@ -188,6 +263,14 @@ loop the loaded yaml:
 
 # Loop through loaded YAML files from a specific directory
 loop the loaded yaml from directory "plugins/skript-yaml":
+    broadcast loop-value
+
+# Loop through unloaded YAML files from a specific directory
+loop the unloaded yaml from directory "plugins/skript-yaml":
+    broadcast loop-value
+
+# Loop through all loaded YAML directories
+loop the loaded yaml directories:
     broadcast loop-value
 ```
 ---
@@ -373,7 +456,7 @@ loop yaml node keys "node" from "config":
 
 ## Conditions
 
-### Condition (Is yaml loaded)
+### Condition (Is yaml loaded) {#condition-is-yaml-loaded}
 Checks if one or more yaml files are loaded into memory using said id
 
 #### Syntax
@@ -391,7 +474,34 @@ if yaml "config" is loaded:
 ```
 ---
 
-### Condition (Is yaml empty)
+### Condition (Is yaml modified) {#condition-is-yaml-modified}
+Checks if a YAML file has been modified since it was last loaded or saved
+
+#### Syntax
+
+`y[a]ml %string% is (modified|dirty|unsaved)`
+
+`y[a]ml %string% is not (modified|dirty|unsaved)`
+
+#### Example
+
+```skript
+# Check if a YAML file has been modified
+if yaml "config" is modified:
+    broadcast "Config has unsaved changes!"
+    save yaml "config"
+
+# Check if a YAML file is not modified
+if yaml "config" is not dirty:
+    broadcast "Config is up to date!"
+
+# Use different synonyms
+if yaml "config" is unsaved:
+    save yaml "config"
+```
+---
+
+### Condition (Is yaml empty) {#condition-is-yaml-empty}
 Only checks if there are any nodes or not
 
 #### Syntax
@@ -407,7 +517,7 @@ if yaml "config" is empty:
 ```
 ---
 
-### Condition (Does yaml path have value)
+### Condition (Does yaml path have value) {#condition-does-yaml-path-have-value}
 Checks if one or more values exist at a path in a cached YAML file using said ID.
   - First input is the path
   - Second input is the id
@@ -432,7 +542,7 @@ if yaml path "test.test" in "config" has value:
 ```
 ---
 
-### Condition (Does yaml path exist)
+### Condition (Does yaml path exist) {#condition-does-yaml-path-exist}
 Checks if one or more paths exist in a cached yaml file using said id
   - First input is the path
   - Second input is the id
@@ -459,7 +569,7 @@ if yaml path "test.test" and "boop.boop" in "config" exists:
 ```
 ---
 
-### Condition (Does yaml path have list)
+### Condition (Does yaml path have list) {#condition-does-yaml-path-have-list}
 Checks if one or more paths contain a list in a cached yaml file using said id
   - First input is the path
   - Second input is the id
@@ -481,7 +591,7 @@ if yaml node "listnode" from "example" has list:
 ```
 ---
 
-### Condition (Does yaml exist)
+### Condition (Does yaml exist) {#condition-does-yaml-exist}
 Checks if a yaml file exists
   - You really shouldn't have to use this since the [load yaml](#effect-load-yaml) effect creates one if it doesn't already exist
   - Input is the yaml file path
@@ -499,6 +609,39 @@ Checks if a yaml file exists
 # Check if a YAML file exists
 if yaml file "plugins/MyAwesomePlugin/config.yml" exists:
     broadcast "YAML file exists!"
+```
+---
+
+### Condition (YAML Node Type)
+Checks if a YAML node is a specific type: list, node, or value.
+  - Returns true if the node matches the specified type.
+  - Supports negated forms (is not, isn't).
+
+#### Syntax
+
+`y[a]ml (node|path) %string% (of|in|from) %string% is [a] (list|node|value)`
+`y[a]ml (node|path) %string% (of|in|from) %string% is(n't| not) [a] (list|node|value)`
+
+#### Example
+
+```skript
+# Set up some test data
+set yaml value "test1.test2" from "config" to "test3"
+set yaml list "my.list" from "config" to "item1", "item2"
+
+# Check node types
+if yaml node "test1.test2" of "config" is value:
+    broadcast "test1.test2 is a value!"
+else if yaml node "my.list" of "config" is list:
+    broadcast "my.list is a list!"
+else if yaml node "test1" of "config" is node:
+    broadcast "test1 is a node!"
+
+# Negated checks
+if yaml node "my.list" of "config" is not value:
+    broadcast "my.list is NOT a value!"
+if yaml node "test1.test2" of "config" isn't list:
+    broadcast "test1.test2 is NOT a list!"
 ```
 ---
 

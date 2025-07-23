@@ -122,7 +122,7 @@ public final class StringUtil {
 		return strip;
 	}
 
-	public static String translateColorCodes(String textToTranslate) {
+	public static String translateColorCodesBack(String textToTranslate) {
 		char[] b = textToTranslate.toCharArray();
 
 		for (int i = 0; i < b.length - 1; ++i) {
@@ -135,11 +135,24 @@ public final class StringUtil {
 		return new String(b);
 	}
 
+	public static String translateColorCode(String textToTranslate) {
+		char[] b = textToTranslate.toCharArray();
+
+		for(int i = 0; i < b.length - 1; ++i) {
+			if (b[i] == '&' && "0123456789AaBbCcDdEeFfKkLlMmNnOoRrXx".indexOf(b[i + 1]) > -1) {
+				b[i] = 167;
+				b[i + 1] = Character.toLowerCase(b[i + 1]);
+			}
+		}
+
+		return new String(b);
+	}
+
 	public static Object parseString(Object delta, boolean parse) {
 		if (delta == null) 
 			return null;
 		if (!parse && String.class.isAssignableFrom(delta.getClass())) {
-			String s = StringUtil.translateColorCodes(((String) delta));
+			String s = StringUtil.translateColorCodesBack(((String) delta));
 			if (s.matches("true|false|yes|no|on|off")) {
 				return s.matches("true|yes|on");
 			} else if (s.matches("(-)?\\d+")) {

@@ -40,8 +40,11 @@ public class EffDeleteYaml extends Effect {
 			if (yaml == null)
 				continue;
 			yaml.getFile().delete();
-			if (!keepLoaded)
+			if (keepLoaded) {
+				yaml.markFileDeleted();
+			} else {
 				SkriptYaml.YAML_STORE.remove(name);
+			}
 		}
 	}
 

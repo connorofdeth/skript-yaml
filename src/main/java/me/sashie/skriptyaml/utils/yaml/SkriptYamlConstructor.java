@@ -124,7 +124,7 @@ public class SkriptYamlConstructor extends SafeConstructor {
 			Double yaw = (Double) values.get("yaw");
 			Double pitch = (Double) values.get("pitch");
 
-			if (w == null | x == null || y == null || z == null || yaw == null || pitch == null)
+			if (w == null || x == null || y == null || z == null || yaw == null || pitch == null)
 				return null;
 
 			World world = Bukkit.getServer().getWorld(w);

@@ -21,11 +21,15 @@ public class SkriptYamlUtils {
 		return null;
 	}
 
+	public static String getServerPath() {
+		return new File("").getAbsoluteFile().getAbsolutePath() + File.separator;
+	}
+
 	public static File getFile(String file, boolean isNonRelative) {
 		if (isNonRelative) {
 			return new File(StringUtil.checkRoot(StringUtil.checkSeparator(file)));
 		} else {
-			String server = new File("").getAbsoluteFile().getAbsolutePath() + File.separator;
+			String server = getServerPath();
 			return new File(server + StringUtil.checkSeparator(file));
 		}
 	}
@@ -36,8 +40,7 @@ public class SkriptYamlUtils {
 		if (root) {
 			dir = new File(StringUtil.checkRoot(name));
 		} else {
-			//Path server = Paths.get("").normalize().toAbsolutePath();
-			String server = new File("").getAbsoluteFile().getAbsolutePath();
+			String server = getServerPath();
 			dir = new File(server + File.separator + name);
 		}
 

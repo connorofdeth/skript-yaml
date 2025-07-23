@@ -5,6 +5,7 @@ import me.sashie.skriptyaml.debug.SkriptNode;
 import me.sashie.skriptyaml.skript.ExprYaml.YamlState;
 import me.sashie.skriptyaml.utils.SkriptYamlUtils;
 import me.sashie.skriptyaml.utils.StringUtil;
+import org.bukkit.ChatColor;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -156,7 +157,7 @@ public class YAMLAPI {
 		Object o = config.getProperty(path);
 		if (o != null) {
 			if (String.class.isAssignableFrom(o.getClass()))
-				o = StringUtil.translateColorCodes((String) o);
+				o = ChatColor.translateAlternateColorCodes('&', (String) o);
 			return o;
 		}
 		return null;
@@ -207,7 +208,7 @@ public class YAMLAPI {
 			Object o = config.getProperty(path);
 			if (o != null) {
 				if (String.class.isAssignableFrom(o.getClass()))
-					o = StringUtil.translateColorCodes((String) o);
+					o = ChatColor.translateAlternateColorCodes('&', (String) o);
 				return o;
 			}
 			return null;
@@ -292,6 +293,7 @@ public class YAMLAPI {
 		List<Object> objects = config.getList(path);
 
 		objects.remove(delta);
+		config.setProperty(path, objects); // Mark as modified
 	}
 
 	public static void removeFromList(String id, String path, Object[] delta) {
@@ -301,6 +303,7 @@ public class YAMLAPI {
 
 		for (Object o : delta)
 			objects.remove(o);
+		config.setProperty(path, objects); // Mark as modified
 	}
 
 	public static <T> void setList(String id, String path, List<T> delta) {
@@ -350,6 +353,7 @@ public class YAMLAPI {
 			} else if (mode == ChangeMode.REMOVE) {
 				for (Object o : delta)
 					objects.remove(o);
+				config.setProperty(path, objects); // Mark as modified
 			} else if (mode == ChangeMode.SET) {
 				if (objects == null) {
 					config.setProperty(path, delta);
@@ -359,6 +363,63 @@ public class YAMLAPI {
 					config.setProperty(path, objects);
 				}
 			}
+		}
+	}
+
+	/**
+	 * Changes the ID of a loaded YAML file.
+	 * 
+	 * @param oldId The current ID of the YAML file
+	 * @param newId The new ID for the YAML file
+	 * @param skriptNode The SkriptNode for error reporting
+	 * @return true if the ID was successfully changed, false otherwise
+	 */
+	public static boolean changeId(String oldId, String newId, SkriptNode skriptNode) {
+		if (!SkriptYaml.YAML_STORE.containsKey(oldId)) {
+			SkriptYaml.warn("No yaml by the name '" + oldId + "' has been loaded " + (skriptNode != null ? skriptNode.toString() : ""));
+			return false;
+		}
+
+		if (SkriptYaml.YAML_STORE.containsKey(newId)) {
+			SkriptYaml.warn("A yaml with the name '" + newId + "' is already loaded " + (skriptNode != null ? skriptNode.toString() : ""));
+			return false;
+		}
+
+		YAMLProcessor yaml = SkriptYaml.YAML_STORE.remove(oldId);
+		SkriptYaml.YAML_STORE.put(newId, yaml);
+		return true;
+	}
+
+	/**
+	 * Reassigns the file path of a loaded YAML file. This is useful when a file
+	 * has been deleted but kept in memory, and you want to save it to a new location.
+	 * 
+	 * @param id The ID of the YAML file
+	 * @param newFilePath The new file path
+	 * @param skriptNode The SkriptNode for error reporting
+	 * @return true if the file path was successfully reassigned, false otherwise
+	 */
+	public static boolean reassignFile(String id, String newFilePath, boolean isNonRelative, SkriptNode skriptNode) {
+		YAMLProcessor yaml = SkriptYaml.YAML_STORE.get(id);
+		if (yaml == null) {
+			SkriptYaml.warn("No yaml by the name '" + id + "' has been loaded " + (skriptNode != null ? skriptNode.toString() : ""));
+			return false;
+		}
+
+		File newFile = SkriptYamlUtils.getFile(newFilePath, isNonRelative);
+
+		try {
+			// Create parent directories if they don't exist
+			File parent = newFile.getParentFile();
+			if (parent != null && !parent.exists()) {
+				parent.mkdirs();
+			}
+
+			yaml.reassignFile(newFile);
+			return true;
+		} catch (Exception e) {
+			SkriptYaml.warn("Failed to reassign file path for yaml '" + id + "': " + e.getMessage() + " " + (skriptNode != null ? skriptNode.toString() : ""));
+			return false;
 		}
 	}
 }

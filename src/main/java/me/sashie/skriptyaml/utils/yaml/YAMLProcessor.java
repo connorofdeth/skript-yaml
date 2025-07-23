@@ -76,12 +76,13 @@ public class YAMLProcessor extends YAMLNode {
 	private static final String COMMENT_PREFIX = "# ";
 	private static final String HEADER_PREFIX = "## ";
 	protected final Yaml yaml;
-	protected final File file;
+	protected File file;
 	protected String id;
 	private StringBuilder builder;
 	protected String header = null;
 	protected boolean extraHeaderLine;
 	protected YAMLFormat format;
+	private boolean fileDeleted = false;
 
 	/*
 	 * Map from property key to comment. Comment may have multiple lines that are
@@ -167,6 +168,7 @@ public class YAMLProcessor extends YAMLNode {
 
 			read(yaml.load(builder.toString()));
 			//read(yaml.load(input));
+			markUnmodified(); // Reset modified flag after successful load
 		} catch (ConstructorException e) {
 			SkriptYaml.error("[Load Yaml] Snakeyaml " + e.getProblem() + " in file '" + file.getAbsolutePath() + "' (possible loss of data)");
 		} catch (YAMLProcessorException e) {
@@ -351,6 +353,7 @@ public class YAMLProcessor extends YAMLNode {
 					yaml.dump(Collections.singletonMap(entry.getKey(), serialize(entry.getValue())), writer);
 				}
 			}
+			markUnmodified(); // Reset modified flag after successful save
 			return true;
 		} catch (IOException ex) {
 			ex.printStackTrace();
@@ -450,6 +453,9 @@ public class YAMLProcessor extends YAMLNode {
 	}
 
 	public OutputStream getOutputStream() throws IOException {
+		if (fileDeleted) {
+			throw new IOException("Cannot save YAML file: the file has been deleted but kept in memory. Use 'change yaml file path' or 'save yaml as' to assign a new file path.");
+		}
 		return new FileOutputStream(file);
 	}
 
@@ -459,6 +465,33 @@ public class YAMLProcessor extends YAMLNode {
 
 	public String getParentPath() {
 		return file.getParent();
+	}
+
+	/**
+	 * Marks the file as deleted. This prevents saving to a deleted file.
+	 */
+	public void markFileDeleted() {
+		this.fileDeleted = true;
+	}
+
+	/**
+	 * Checks if the file has been marked as deleted.
+	 * 
+	 * @return true if the file has been deleted
+	 */
+	public boolean isFileDeleted() {
+		return fileDeleted;
+	}
+
+	/**
+	 * Reassigns the file path for this YAML processor. This is useful when a file
+	 * has been deleted but kept in memory, and you want to save it to a new location.
+	 * 
+	 * @param newFile the new file path
+	 */
+	public void reassignFile(File newFile) {
+		this.file = newFile;
+		this.fileDeleted = false;
 	}
 
 	/**
@@ -482,6 +515,7 @@ public class YAMLProcessor extends YAMLNode {
 		} else {
 			comments.remove(key);
 		}
+		markModified();
 	}
 
 	/**
@@ -505,6 +539,7 @@ public class YAMLProcessor extends YAMLNode {
 		} else {
 			comments.remove(key);
 		}
+		markModified();
 	}
 
 	/**
@@ -527,6 +562,13 @@ public class YAMLProcessor extends YAMLNode {
 		if (comments != null) {
 			this.comments.putAll(comments);
 		}
+		markModified();
+	}
+
+	@Override
+	public void clear() {
+		super.clear();
+		markModified();
 	}
 
 	/**
@@ -566,7 +608,6 @@ public class YAMLProcessor extends YAMLNode {
 	private class FancyDumperOptions extends DumperOptions {
 		@Override
 		public void setDefaultScalarStyle(ScalarStyle defaultStyle) {
-
 			super.setDefaultScalarStyle(ScalarStyle.LITERAL);
 		}
 	}

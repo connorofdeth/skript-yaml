@@ -24,7 +24,8 @@ import java.io.File;
 @Description("Loads a YAML file into memory." +
 		"\n  - The first input is the YAML file path (ie. \"plugins/MyAwesomePlugin/config.yml\")." +
 		"\n  - The second input allows you to choose your own ID for this file." +
-		"\n  - If the second input isn't used then the files name minus the extention is used as the ID for example `config.yml` becomes `config`.")
+		"\n  - If the second input isn't used then the files name minus the extention is used as the ID for example `config.yml` becomes `config`." +
+		"\n  - When using non-relative, the file path should be relative to root directory of the pc (ie. \"C:/MinecraftServer/plugins/MyAwesomePlugin/config.yml\")")
 @Examples({
 		"#Both examples produce the same id for use in other effects/expressions",
 		"load yaml \"plugins/MyAwesomePlugin/config.yml\"",
@@ -67,14 +68,14 @@ public class EffLoadYaml extends Effect {
 
 	private void load(String name, Event event) {
 		File yamlFile = SkriptYamlUtils.getFile(name, mark == 1);
-		String n = null;
+		String id = null;
 		if (matchedPattern == 0)
-			n = StringUtil.stripExtention(yamlFile.getName());
+			id = StringUtil.stripExtention(yamlFile.getName());
 		else if (matchedPattern == 1)
-			n = this.id.getSingle(event);
+			id = this.id.getSingle(event);
 		else if (matchedPattern == 2)
-			n = name;
-		YAMLAPI.load(n, yamlFile, skriptNode);
+			id = name;
+		YAMLAPI.load(id, yamlFile, skriptNode);
 	}
 
 	@Override

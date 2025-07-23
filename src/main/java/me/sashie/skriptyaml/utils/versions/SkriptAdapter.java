@@ -44,4 +44,7 @@ public interface SkriptAdapter {
 
 	void addDelayedEvent(Event event);
 
+	<T> boolean checkExpression(Expression<T> expr, Event event, Object checker, boolean negated);
+
+	<T> Object createChecker(java.util.function.Predicate<T> check);
 }

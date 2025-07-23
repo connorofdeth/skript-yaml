@@ -20,6 +20,7 @@ import me.sashie.skriptyaml.utils.SkriptYamlUtils;
 import me.sashie.skriptyaml.utils.StringUtil;
 import me.sashie.skriptyaml.utils.yaml.YAMLProcessor;
 import org.bukkit.event.Event;
+import org.bukkit.ChatColor;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Array;
@@ -113,7 +114,7 @@ public class ExprListValue<T> extends SimpleExpressionFork<T> {
 		Object o = items.get(index - 1);
 		if (o != null) {
 			if (!checks && String.class.isAssignableFrom(o.getClass()))
-				o = StringUtil.translateColorCodes((String) o);
+				o = ChatColor.translateAlternateColorCodes('&', (String) o);
 			try {
 				return SkriptYamlUtils.convertToArray(o, (Class<T>) o.getClass());
 			} catch (ClassCastException e) {

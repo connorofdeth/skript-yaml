@@ -10,7 +10,6 @@ import ch.njol.skript.lang.Expression;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.util.Kleenean;
 import me.sashie.skriptyaml.SkriptYaml;
-import me.sashie.skriptyaml.utils.yaml.YAMLProcessor;
 
 import org.bukkit.event.Event;
 
@@ -36,11 +35,8 @@ public class CondYamlIsLoaded extends Condition {
 
 	@Override
 	public boolean check(final Event event) {
-		String file = this.file.getSingle(event);
-		YAMLProcessor yaml = SkriptYaml.YAML_STORE.get(file);
-		if (yaml == null)
-			return isNegated();
-		return !isNegated();
+		Object checker = SkriptYaml.getInstance().getSkriptAdapter().createChecker((String s) -> SkriptYaml.YAML_STORE.containsKey(s));
+		return SkriptYaml.getInstance().getSkriptAdapter().checkExpression(file, event, checker, isNegated());
 	}
 
 	@Override

@@ -23,6 +23,7 @@ import me.sashie.skriptyaml.SkriptYaml;
 import me.sashie.skriptyaml.debug.SkriptNode;
 import me.sashie.skriptyaml.utils.SkriptYamlUtils;
 import me.sashie.skriptyaml.utils.StringUtil;
+import org.bukkit.ChatColor;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -35,6 +36,8 @@ public class YAMLNode {
 	protected Map<String, Object> root;
 	protected List<String> allKeys;
 	private boolean writeDefaults;
+
+	protected boolean modified = false;
 
 	public YAMLNode(Map<String, Object> root, boolean writeDefaults) {
 		this.root = root;
@@ -127,6 +130,7 @@ public class YAMLNode {
 			root.put(path, value);
 			if (!allKeys.contains(path))
 				allKeys.add(path);
+			markModified();
 			return;
 		}
 
@@ -145,6 +149,7 @@ public class YAMLNode {
 			// Found our target!
 			if (i == parts.length - 1) {
 				node.put(parts[i], value);
+				markModified();
 				return;
 			}
 
@@ -189,7 +194,7 @@ public class YAMLNode {
 		if (o == null) {
 			return null;
 		}
-		return StringUtil.translateColorCodes(o.toString());
+		return ChatColor.translateAlternateColorCodes('&', o.toString());
 	}
 
 	/**
@@ -746,6 +751,7 @@ public class YAMLNode {
 
 		if (!path.contains(".")) {
 			root.remove(path);
+			markModified();
 			return;
 		}
 
@@ -762,6 +768,7 @@ public class YAMLNode {
 			// Found our target!
 			if (i == parts.length - 1) {
 				node.remove(parts[i]);
+				markModified();
 				return;
 			}
 
@@ -784,6 +791,29 @@ public class YAMLNode {
 
 	public void setWriteDefaults(boolean writeDefaults) {
 		this.writeDefaults = writeDefaults;
+	}
+
+	/**
+	 * Marks the YAML node as modified. This is called internally when properties are changed.
+	 */
+	public void markModified() {
+		this.modified = true;
+	}
+
+	/**
+	 * Marks the YAML node as unmodified. This is called internally when the node is saved or loaded.
+	 */
+	public void markUnmodified() {
+		this.modified = false;
+	}
+
+	/**
+	 * Checks if the YAML node has been modified since it was last loaded or saved.
+	 *
+	 * @return true if the node has been modified
+	 */
+	public boolean isModified() {
+		return modified;
 	}
 
 }

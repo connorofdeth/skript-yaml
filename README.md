@@ -20,7 +20,6 @@ Expressions
  - [Yaml](#expression-yaml)
  - [Yaml list value](#expression-yaml-list-value)
  - [All yaml nodes](#expression-all-yaml-nodes)
- - [YAML Node Type](#expression-yaml-node-type)
  - [Yaml comment/header](#expression-yaml-comment-or-header)
  - [Yaml loop](#expression-yaml-loop)
  

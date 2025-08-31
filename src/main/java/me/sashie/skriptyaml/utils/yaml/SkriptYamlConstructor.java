@@ -31,7 +31,7 @@ public class SkriptYamlConstructor extends SafeConstructor {
 			{
 				setMaxAliasesForCollections(Integer.MAX_VALUE);
 				setAllowRecursiveKeys(true);
-				setCodePointLimit(Integer.MAX_VALUE);
+				setCodePointLimit(100 * 1024 * 1024);
 				setTagInspector(tag -> true);
 			}
 		});

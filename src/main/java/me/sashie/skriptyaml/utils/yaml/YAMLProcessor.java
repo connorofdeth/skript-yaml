@@ -27,6 +27,7 @@ import me.sashie.skriptyaml.utils.StringUtil;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.ConstructorException;
 import org.yaml.snakeyaml.error.YAMLException;
@@ -101,11 +102,13 @@ public class YAMLProcessor extends YAMLNode {
 		options.setDefaultFlowStyle(format.getStyle());
 		options.setTimeZone(TimeZone.getDefault());
 		options.setSplitLines(false);
+		LoaderOptions options2 = new LoaderOptions();
+        options2.setCodePointLimit(100 * 1024 * 1024); // 100MB limit
 
 		Representer representer = SkriptYaml.getInstance().getRepresenter();
 		representer.setDefaultFlowStyle(format.getStyle());
 
-		yaml = new Yaml(SkriptYaml.getInstance().getConstructor(), representer, options);
+		yaml = new Yaml(SkriptYaml.getInstance().getConstructor(), representer, options, options2);
 
 		this.file = file;
 	}
